@@ -29,13 +29,14 @@
       $(document).ready(function () {
         $.get('http://sat.perto.com.br/prjSATWebAPI/api/LogAlerta', function(data){ 
           storageGraph = { labels: [], freeSpace: [], minimumSpace: [], totalSpace: [], freeSpaceColors: [], minimumSpaceColors: [], 
-            totalSpaceColors: [], freeSpaceBorders: [], minimumSpaceBorders: [], totalSpaceBorders: [] }
+            usedSpace: [], totalSpaceColors: [], freeSpaceBorders: [], minimumSpaceBorders: [], totalSpaceBorders: [] }
 
           lazyGraph = { labels: [], time: [], timeFormated: [], timeColors: [], timeBorders: [] }
 
           data.forEach((el, i) => {
             if (el.tipo == "STORAGE") {
               storageGraph.labels.push(el.servidor + " " + el.disco);
+              storageGraph.usedSpace.push((el.tamanhoEmGb - el.espacoEmGb).toFixed(2));
               storageGraph.freeSpace.push(el.espacoEmGb);
               storageGraph.minimumSpace.push((el.tamanhoEmGb*0.3).toFixed(2));
               storageGraph.totalSpace.push(el.tamanhoEmGb);   
@@ -48,8 +49,8 @@
                 storageGraph.freeSpaceBorders.push("rgba(77, 175, 124, 1)"); 
               }
 
-              storageGraph.minimumSpaceColors.push("rgba(10, 20, 30, 0.5)");
-              storageGraph.minimumSpaceBorders.push("rgba(10, 20, 30, 1)"); 
+              storageGraph.minimumSpaceColors.push("rgb(169,169,169, 0.5)");
+              storageGraph.minimumSpaceBorders.push("rgba(169,169,169, 1)"); 
               
               storageGraph.totalSpaceColors.push("rgba(50, 150, 250, 0.3)");
               storageGraph.totalSpaceBorders.push("rgba(50, 150, 250, 1)"); 
@@ -72,16 +73,13 @@
                 lazyGraph.timeBorders.push("rgba(77, 175, 124, 1)"); 
               }
             } else if (el.tipo == "SERVICO") {
-              var color = "red";
-              if (el.mensagem.includes("Running")) color = "green";
-
               $(".table-services").find('tbody')
                 .append($('<tr>')
                   .append($('<td>').text(el.servidor))
                   .append($('<td>').text(el.tipo))
                   .append($('<td>').text(el.item))
-                  .append($('<td>').append($(`<span class='${color}'>` + el.mensagem + '</span>')))
-                    .append($('<td>').text(el.dataHoraCad))
+                  .append($('<td>').append($(`<span class='${el.mensagem.includes("Running") ? "green" : "red"}'>` + el.mensagem.replace("Running", "Executando") + '</span>')))
+                  .append($('<td>').text(el.dataHoraCad))
                 );
             }
           });
@@ -92,6 +90,13 @@
               labels: storageGraph.labels,
               datasets: [
                 {
+                  label: "Utilizado GB",
+                  data: storageGraph.usedSpace,
+                  backgroundColor: storageGraph.freeSpaceColors,
+                  borderColor: storageGraph.freeSpaceBorders,
+                  borderWidth: 1
+                },
+                {
                   label: "Disponível GB",
                   data: storageGraph.freeSpace,
                   backgroundColor: storageGraph.freeSpaceColors,
@@ -99,14 +104,14 @@
                   borderWidth: 1
                 },
                 {
-                  label: "Mínimo GB",
+                  label: "30% GB",
                   data: storageGraph.minimumSpace,
                   backgroundColor: storageGraph.minimumSpaceColors,
                   borderColor: storageGraph.minimumSpaceBorders,
                   borderWidth: 1
                 },
                 {
-                  label: "Tamanho GB",
+                  label: "Total GB",
                   data: storageGraph.totalSpace,
                   backgroundColor: storageGraph.totalSpaceColors,
                   borderColor: storageGraph.totalSpaceBorders,
